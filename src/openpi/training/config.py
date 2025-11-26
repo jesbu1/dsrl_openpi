@@ -114,6 +114,7 @@ class ModelTransformFactory(GroupFactory):
                         _transforms.TokenizePrompt(
                             _tokenizer.PaligemmaTokenizer(model_config.max_token_len),
                         ),
+                        _transforms.PadStatesAndActions(model_config.action_dim),
                     ],
                 )
             case _model.ModelType.PI05:
@@ -161,7 +162,7 @@ class DataConfigFactory(abc.ABC):
     def create(self, assets_dirs: pathlib.Path, model_config: _model.BaseModelConfig) -> DataConfig:
         """Create a data config."""
 
-    def create_base_config(self, assets_dirs: pathlib.Path) -> DataConfig:
+    def create_base_config(self, assets_dirs: pathlib.Path, model_config: _model.BaseModelConfig) -> DataConfig:
         repo_id = self.repo_id if self.repo_id is not tyro.MISSING else None
         asset_id = self.assets.asset_id or repo_id
         return dataclasses.replace(
@@ -169,6 +170,7 @@ class DataConfigFactory(abc.ABC):
             repo_id=repo_id,
             asset_id=asset_id,
             norm_stats=self._load_norm_stats(epath.Path(self.assets.assets_dir or assets_dirs), asset_id),
+            use_quantile_norm=model_config.model_type != ModelType.PI0,
         )
 
     def _load_norm_stats(self, assets_dir: epath.Path, asset_id: str | None) -> dict[str, _transforms.NormStats] | None:
@@ -281,13 +283,12 @@ class LeRobotBridgeDataConfig(DataConfigFactory):
         data_transforms = _transforms.Group(
             inputs=[
                 bridge_policy.BridgeInputs(
-                    action_dim=model_config.action_dim,
                     use_delta_actions=False,
                     model_type=self.model_type,
                     how_many_cameras=self.how_many_cameras,
                 )
             ],
-            outputs=[bridge_policy.BridgeOutputs(action_dim=model_config.action_dim, use_delta_actions=False)],
+            outputs=[bridge_policy.BridgeOutputs(use_delta_actions=False)],
         )
         if self.obs_type == "regular":
             obs_key = "observation.images.image_0"
@@ -364,7 +365,7 @@ class LeRobotLiberoDataConfig(DataConfigFactory):
         # how to modify the transforms to match your dataset. Once you created your own transforms, you can
         # replace the transforms below with your own.
         data_transforms = _transforms.Group(
-            inputs=[libero_policy.LiberoInputs(action_dim=model_config.action_dim, model_type=model_config.model_type)],
+            inputs=[libero_policy.LiberoInputs(model_type=model_config.model_type)],
             outputs=[libero_policy.LiberoOutputs()],
         )
 
@@ -393,7 +394,7 @@ class LeRobotLiberoDataConfig(DataConfigFactory):
 
         # We return all data transforms for training and inference. No need to change anything here.
         return dataclasses.replace(
-            self.create_base_config(assets_dirs),
+            self.create_base_config(assets_dirs, model_config),
             repack_transforms=repack_transform,
             data_transforms=data_transforms,
             model_transforms=model_transforms,
@@ -525,7 +526,7 @@ _CONFIGS = [
         data=SimpleDataConfig(
             assets=AssetsConfig(asset_id="droid"),
             data_transforms=lambda model: _transforms.Group(
-                inputs=[droid_policy.DroidInputs(action_dim=model.action_dim)],
+                inputs=[droid_policy.DroidInputs(model_type=ModelType.PI0)],
                 outputs=[droid_policy.DroidOutputs()],
             ),
             base_config=DataConfig(
@@ -539,7 +540,7 @@ _CONFIGS = [
         data=SimpleDataConfig(
             assets=AssetsConfig(asset_id="droid"),
             data_transforms=lambda model: _transforms.Group(
-                inputs=[droid_policy.DroidInputs(action_dim=model.action_dim, model_type=ModelType.PI0_FAST)],
+                inputs=[droid_policy.DroidInputs(model_type=ModelType.PI0_FAST)],
                 outputs=[droid_policy.DroidOutputs()],
             ),
             base_config=DataConfig(

@@ -56,16 +56,15 @@ class BridgeInputs(transforms.DataTransformFn):
     The 'action' is expected to be a 7-dim vector (6 joint actions + 1 gripper action).
     """
 
-    action_dim: int
+    # Determines which model will be used.
+    model_type: _model.ModelType
     use_delta_actions: bool = False  # already in delta space
     how_many_cameras: int = 1
-    # Determines which model will be used.
-    model_type: _model.ModelType = _model.ModelType.PI0
 
     @override
     def __call__(self, sample: dict[str, Any]) -> dict[str, Any]:
         # We only mask padding for pi0 model, not pi0-FAST. Do not change this for your own dataset.
-        mask_padding = self.model_type == _model.ModelType.PI0
+        mask_padding = self.model_type == _model.ModelType.PI0 or self.model_type == _model.ModelType.PI05
 
         # Ensure expected keys are present
         required_keys = {
@@ -92,7 +91,7 @@ class BridgeInputs(transforms.DataTransformFn):
 
         zero_image = np.zeros_like(sample["observation.images.image_0"])
         inputs = {
-            "state": transforms.pad_to_dim(sample["state"], self.action_dim),
+            "state": sample["state"],
             "image": {
                 "base_0_rgb": zero_image,
                 "base_1_rgb": zero_image,
@@ -132,7 +131,7 @@ class BridgeInputs(transforms.DataTransformFn):
             del inputs["image"]["base_1_rgb"]
             del inputs["image_mask"]["base_1_rgb"]
         if "actions" in sample:
-            inputs["actions"] = transforms.pad_to_dim(sample["actions"], self.action_dim)
+            inputs["actions"] = sample["actions"]
         if "prompt" in sample:
             inputs["prompt"] = sample["prompt"]
 
