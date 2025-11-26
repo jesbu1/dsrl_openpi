@@ -142,7 +142,6 @@ class BridgeInputs(transforms.DataTransformFn):
 class BridgeOutputs(transforms.DataTransformFn):
     """Converts model outputs back to BRIDGE action space."""
 
-    action_dim: int
     use_delta_actions: bool = False
 
     @override
