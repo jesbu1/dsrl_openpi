@@ -608,6 +608,7 @@ _CONFIGS = [
                 local_files_only=False,  # Set to True for local-only datasets.
                 prompt_from_task=True,
             ),
+            extra_delta_transform=True,
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_base/params"),
         num_train_steps=30_000,
@@ -640,6 +641,7 @@ _CONFIGS = [
                 local_files_only=False,  # Set to True for local-only datasets.
                 prompt_from_task=True,
             ),
+            extra_delta_transform=True,
         ),
         # Note that we load the pi0-FAST base model checkpoint here.
         weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_fast_base/params"),
@@ -658,6 +660,7 @@ _CONFIGS = [
                 local_files_only=False,  # Set to True for local-only datasets.
                 prompt_from_task=True,
             ),
+            extra_delta_transform=True,
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_fast_base/params"),
         num_train_steps=30_000,
