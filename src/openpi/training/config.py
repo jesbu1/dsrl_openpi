@@ -274,7 +274,6 @@ class LeRobotBridgeDataConfig(DataConfigFactory):
     model_type: ModelType = ModelType.PI0
     how_many_cameras: int = 1
     default_prompt: str = ""
-    obs_type: str = "regular"
 
     action_sequence_keys: Sequence[str] = ("action",)
 
@@ -290,14 +289,7 @@ class LeRobotBridgeDataConfig(DataConfigFactory):
             ],
             outputs=[bridge_policy.BridgeOutputs(use_delta_actions=False)],
         )
-        if self.obs_type == "regular":
-            obs_key = "observation.images.image_0"
-        elif self.obs_type == "path":
-            obs_key = "observation.path.image_0"
-        elif self.obs_type == "path_masked":
-            obs_key = "observation.masked_path.image_0"
-        else:
-            raise ValueError(f"Invalid obs_type: {self.obs_type}")
+        obs_key = "observation.images.image_0"
         repack_dict = {
             "state": "observation.state",
             "observation.images.image_0": obs_key,
@@ -751,7 +743,6 @@ _CONFIGS = [
             how_many_cameras=1,
             model_type=ModelType.PI0,
             base_config=DataConfig(local_files_only=True),
-            obs_type="regular",
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_base/params"),
         freeze_filter=pi0.Pi0Config(
