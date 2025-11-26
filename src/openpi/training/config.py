@@ -208,7 +208,7 @@ class SimpleDataConfig(DataConfigFactory):
             self.create_base_config(assets_dirs),
             data_transforms=self.data_transforms(model_config),
             model_transforms=self.model_transforms(model_config),
-            use_quantile_norm=model_config.model_type == ModelType.PI0_FAST,
+            use_quantile_norm=model_config.model_type != ModelType.PI0,
         )
 
 
