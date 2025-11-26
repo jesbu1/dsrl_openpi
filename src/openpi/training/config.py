@@ -20,6 +20,7 @@ import openpi.models.tokenizer as _tokenizer
 import openpi.policies.aloha_policy as aloha_policy
 import openpi.policies.droid_policy as droid_policy
 import openpi.policies.libero_policy as libero_policy
+import openpi.policies.bridge_policy as bridge_policy
 import openpi.shared.download as _download
 import openpi.shared.normalize as _normalize
 import openpi.training.optimizer as _optimizer
@@ -113,6 +114,19 @@ class ModelTransformFactory(GroupFactory):
                         _transforms.TokenizePrompt(
                             _tokenizer.PaligemmaTokenizer(model_config.max_token_len),
                         ),
+                    ],
+                )
+            case _model.ModelType.PI05:
+                assert isinstance(model_config, pi0.Pi0Config)
+                return _transforms.Group(
+                    inputs=[
+                        _transforms.InjectDefaultPrompt(self.default_prompt),
+                        _transforms.ResizeImages(224, 224),
+                        _transforms.TokenizePrompt(
+                            _tokenizer.PaligemmaTokenizer(model_config.max_token_len),
+                            discrete_state_input=model_config.discrete_state_input,
+                        ),
+                        _transforms.PadStatesAndActions(model_config.action_dim),
                     ],
                 )
             case _model.ModelType.PI0_FAST:
@@ -247,6 +261,66 @@ class LeRobotAlohaDataConfig(DataConfigFactory):
             model_transforms=model_transforms,
             action_sequence_keys=self.action_sequence_keys,
         )
+
+
+@dataclasses.dataclass(frozen=True)
+class LeRobotBridgeDataConfig(DataConfigFactory):
+    """Data config for the Bridge dataset."""
+
+    # If true, will convert joint dimensions to deltas with respect to the current state before passing to the model.
+    # Gripper dimensions will remain in absolute values.
+    model_type: ModelType = ModelType.PI0
+    how_many_cameras: int = 1
+    default_prompt: str = ""
+    obs_type: str = "regular"
+
+    action_sequence_keys: Sequence[str] = ("action",)
+
+    @override
+    def create(self, assets_dirs: pathlib.Path, model_config: _model.BaseModelConfig) -> DataConfig:
+        data_transforms = _transforms.Group(
+            inputs=[
+                bridge_policy.BridgeInputs(
+                    action_dim=model_config.action_dim,
+                    use_delta_actions=False,
+                    model_type=self.model_type,
+                    how_many_cameras=self.how_many_cameras,
+                )
+            ],
+            outputs=[bridge_policy.BridgeOutputs(action_dim=model_config.action_dim, use_delta_actions=False)],
+        )
+        if self.obs_type == "regular":
+            obs_key = "observation.images.image_0"
+        elif self.obs_type == "path":
+            obs_key = "observation.path.image_0"
+        elif self.obs_type == "path_masked":
+            obs_key = "observation.masked_path.image_0"
+        else:
+            raise ValueError(f"Invalid obs_type: {self.obs_type}")
+        repack_dict = {
+            "state": "observation.state",
+            "observation.images.image_0": obs_key,
+            #"observation.images.image_1": "observation.images.image_1",
+            #"observation.images.image_2": "observation.images.image_2",
+            #"observation.images.image_3": "observation.images.image_3",
+            "camera_present": "camera_present",
+            "actions": "action",
+            "prompt": "prompt",
+        }
+        repack_transforms = _transforms.Group(inputs=[_transforms.RepackTransform(repack_dict)])
+
+        # Standard model transforms (resizing, tokenization)
+        model_transforms = ModelTransformFactory(default_prompt=self.default_prompt)(model_config)
+
+        return dataclasses.replace(
+            self.create_base_config(assets_dirs),
+            repack_transforms=repack_transforms,
+            data_transforms=data_transforms,
+            model_transforms=model_transforms,
+            action_sequence_keys=self.action_sequence_keys,
+            prompt_from_task=True,
+        )
+
 
 
 @dataclasses.dataclass(frozen=True)
@@ -463,6 +537,20 @@ _CONFIGS = [
             assets=AssetsConfig(asset_id="droid"),
             data_transforms=lambda model: _transforms.Group(
                 inputs=[droid_policy.DroidInputs(action_dim=model.action_dim, model_type=ModelType.PI0_FAST)],
+                outputs=[droid_policy.DroidOutputs()],
+            ),
+            base_config=DataConfig(
+                prompt_from_task=True,
+            ),
+        ),
+    ),
+    TrainConfig(
+        name="pi05_droid",
+        model=pi0.Pi0Config(action_horizon=15, pi05=True),
+        data=SimpleDataConfig(
+            assets=AssetsConfig(asset_id="droid"),
+            data_transforms=lambda model: _transforms.Group(
+                inputs=[droid_policy.DroidInputs(model_type=ModelType.PI05)],
                 outputs=[droid_policy.DroidOutputs()],
             ),
             base_config=DataConfig(
