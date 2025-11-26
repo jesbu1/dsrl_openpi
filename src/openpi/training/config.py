@@ -589,6 +589,7 @@ _CONFIGS = [
                 # a field called ``prompt`` in the input dict. The recommended setting is True.
                 prompt_from_task=True,
             ),
+            extra_delta_transform=True,
         ),
         # Here you define which pre-trained checkpoint you want to load to initialize the model.
         # This should match the model config you chose above -- i.e. in this case we use the pi0 base model.
