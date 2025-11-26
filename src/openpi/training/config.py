@@ -296,7 +296,7 @@ class LeRobotBridgeDataConfig(DataConfigFactory):
             #"observation.images.image_1": "observation.images.image_1",
             #"observation.images.image_2": "observation.images.image_2",
             #"observation.images.image_3": "observation.images.image_3",
-            "camera_present": "camera_present",
+            "camera_present": [1],
             "actions": "action",
             "prompt": "prompt",
         }

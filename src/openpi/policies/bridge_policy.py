@@ -35,7 +35,7 @@ def _decode_bridge(data: dict) -> dict:
     if "camera_present" in data:
         camera_present = np.asarray(data["camera_present"])
     else:
-        camera_present = None
+        camera_present = [1]
     data["camera_present"] = camera_present
 
     for k, v in data.items():
