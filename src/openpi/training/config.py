@@ -756,6 +756,26 @@ _CONFIGS = [
         save_interval=250,
         keep_period=10000,
     ),
+    ### BRIDGE LoRA Fine-tuning
+    #
+    TrainConfig(
+        name="pi0_bridge_1_cam",
+        model=pi0.Pi0Config(),
+        data=LeRobotBridgeDataConfig(
+            repo_id="jesbu1/bridge_v2_lerobot_pathmask",
+            how_many_cameras=1,
+            model_type=ModelType.PI0,
+            base_config=DataConfig(local_files_only=True),
+        ),
+        weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_base/params"),
+        ema_decay=None,
+        num_train_steps=50_000,
+        batch_size=256,
+        fsdp_devices=2,
+        log_interval=50,
+        save_interval=250,
+        keep_period=10000,
+    ),
     #
     # Debugging configs.
     #
