@@ -553,6 +553,8 @@ _CONFIGS = [
                 prompt_from_task=True,
             ),
         ),
+        weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_droid/params"),
+
     ),
     TrainConfig(
         name="pi05_droid_jointpos",
