@@ -77,7 +77,6 @@ def posemb_dual_sincos(
 
 @dataclasses.dataclass(frozen=True)
 class TMPi0Config(Pi0Config):
-
     @property
     @override
     def model_type(self) -> _model.ModelType:
@@ -168,7 +167,7 @@ class TMPi0(Pi0):
 
         # forward pass of prefix
         prefix_tokens, prefix_mask, prefix_ar_mask = self.embed_prefix(observation)
-        
+
         # noise the prefix using a DDIM-style marginal controlled by time_prefix
         time_prefix = jax.random.uniform(time_prefix_rng, batch_shape)
         noise_prefix = jax.random.normal(noise_prefix_rng, prefix_tokens.shape)
@@ -182,9 +181,7 @@ class TMPi0(Pi0):
         noisy_prefix_tokens = sqrt_ab * prefix_tokens + sqrt_bb * noise_prefix
 
         # forward pass of suffix
-        suffix_tokens, suffix_mask, suffix_ar_mask, adarms_cond = self.embed_suffix(
-            observation, x_t, time, time_prefix
-        )
+        suffix_tokens, suffix_mask, suffix_ar_mask, adarms_cond = self.embed_suffix(observation, x_t, time, time_prefix)
         input_mask = jnp.concatenate([prefix_mask, suffix_mask], axis=1)
         ar_mask = jnp.concatenate([prefix_ar_mask, suffix_ar_mask], axis=0)
         attn_mask = make_attn_mask(input_mask, ar_mask)
@@ -244,12 +241,15 @@ class TMPi0(Pi0):
 
         noisy_norm = jnp.linalg.norm(noisy_prefix_tokens, axis=-1, keepdims=True)
         clean_norm = jnp.linalg.norm(prefix_tokens, axis=-1, keepdims=True)
-        cosine_sim = jnp.sum(noisy_prefix_tokens * prefix_tokens, axis=-1) / (noisy_norm.squeeze(-1) * clean_norm.squeeze(-1) + 1e-8)
+        cosine_sim = jnp.sum(noisy_prefix_tokens * prefix_tokens, axis=-1) / (
+            noisy_norm.squeeze(-1) * clean_norm.squeeze(-1) + 1e-8
+        )
         # jax.debug.print('cosine_sim (mean): {}', jnp.mean(cosine_sim))
 
         prefix_attn_mask = make_attn_mask(prefix_mask, prefix_ar_mask)
         positions = jnp.cumsum(prefix_mask, axis=1) - 1
         _, kv_cache = self.PaliGemma.llm([noisy_prefix_tokens, None], mask=prefix_attn_mask, positions=positions)
+
         def step(carry):
             x_t, time = carry
             suffix_tokens, suffix_mask, suffix_ar_mask, adarms_cond = self.embed_suffix(
@@ -273,7 +273,11 @@ class TMPi0(Pi0):
             positions = jnp.sum(prefix_mask, axis=-1)[:, None] + jnp.cumsum(suffix_mask, axis=-1) - 1
 
             (prefix_out, suffix_out), _ = self.PaliGemma.llm(
-                [None, suffix_tokens], mask=full_attn_mask, positions=positions, kv_cache=kv_cache, adarms_cond=[None, adarms_cond]
+                [None, suffix_tokens],
+                mask=full_attn_mask,
+                positions=positions,
+                kv_cache=kv_cache,
+                adarms_cond=[None, adarms_cond],
             )
             assert prefix_out is None
             v_t = self.action_out_proj(suffix_out[:, -self.action_horizon :])
@@ -284,6 +288,6 @@ class TMPi0(Pi0):
             x_t, time = carry
             # robust to floating-point error
             return time >= -dt / 2
+
         x_0, _ = jax.lax.while_loop(cond, step, (noise, 1.0))
         return x_0
-    

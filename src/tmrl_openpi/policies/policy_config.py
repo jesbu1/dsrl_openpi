@@ -66,7 +66,7 @@ def create_trained_policy(
     else:
         # Avoid bfloat16 params on machines without proper support; load as fp32.
         model = train_config.model.load(_model.restore_params(checkpoint_dir / "params", dtype=jnp.float32))
-    
+
     data_config = train_config.data.create(train_config.assets_dirs, train_config.model)
     if norm_stats is None:
         # We are loading the norm stats from the checkpoint instead of the config assets dir to make sure

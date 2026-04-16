@@ -79,7 +79,11 @@ class Policy(BasePolicy):
             if x is None:
                 return None
             if self._is_pytorch_model:
-                t = x.to(self._device) if isinstance(x, torch.Tensor) else torch.from_numpy(np.asarray(x)).to(self._device)
+                t = (
+                    x.to(self._device)
+                    if isinstance(x, torch.Tensor)
+                    else torch.from_numpy(np.asarray(x)).to(self._device)
+                )
                 return t if batched else t.unsqueeze(0)
             a = jnp.asarray(x)
             return a if batched else a[np.newaxis]
@@ -99,15 +103,14 @@ class Policy(BasePolicy):
             for cam in inputs["image"]:
                 m = inputs["image_mask"][cam]
                 if m.ndim == 0:
-                    inputs["image_mask"][cam] = (
-                        m.expand(bs) if self._is_pytorch_model else jnp.broadcast_to(m, (bs,))
-                    )
-            
+                    inputs["image_mask"][cam] = m.expand(bs) if self._is_pytorch_model else jnp.broadcast_to(m, (bs,))
+
             # Ensure prompt fields match the batch dimension bs
             for k in ["tokenized_prompt", "tokenized_prompt_mask"]:
                 if k in inputs and inputs[k] is not None and inputs[k].ndim == 1:
                     inputs[k] = (
-                        inputs[k].unsqueeze(0).expand(bs, -1) if self._is_pytorch_model 
+                        inputs[k].unsqueeze(0).expand(bs, -1)
+                        if self._is_pytorch_model
                         else jnp.broadcast_to(inputs[k], (bs, *inputs[k].shape))
                     )
 
@@ -164,13 +167,13 @@ class Policy(BasePolicy):
 
         raw = {"state": inputs["state"], "actions": actions}
         outputs = jax.tree.map(
-            lambda x: np.asarray(x.detach().cpu()) if hasattr(x, "detach") else (np.asarray(x) if x is not None else None),
+            lambda x: (
+                np.asarray(x.detach().cpu()) if hasattr(x, "detach") else (np.asarray(x) if x is not None else None)
+            ),
             raw,
         )
         if not batched:
-            outputs = jax.tree.map(
-                lambda x: x[0] if hasattr(x, "ndim") and x.ndim > 0 else x, outputs
-            )
+            outputs = jax.tree.map(lambda x: x[0] if hasattr(x, "ndim") and x.ndim > 0 else x, outputs)
         outputs = self._output_transform(outputs)
         outputs["policy_timing"] = {"infer_ms": (time.monotonic() - t0) * 1000}
 
@@ -220,7 +223,6 @@ class Policy(BasePolicy):
         # outputs["noise_from_reconstructed_actions"] = noise_from_reconstructed_actions_np
 
         return outputs
-
 
     @override
     def get_prefix_rep(self, obs: dict):

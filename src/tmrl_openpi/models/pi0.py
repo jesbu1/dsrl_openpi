@@ -227,8 +227,8 @@ class Pi0(_model.BaseModel):
             keep_mask = jnp.ones((batch_size, 1), dtype=jnp.bool_)
             keep_mask = jnp.logical_and(keep_mask, jnp.logical_not(force_dropout))
             # jax.debug.print(
-            #     "Force Dropout Active: {fd} | Mean Keep Rate: {km}", 
-            #     fd=force_dropout, 
+            #     "Force Dropout Active: {fd} | Mean Keep Rate: {km}",
+            #     fd=force_dropout,
             #     km=jnp.mean(keep_mask.astype(jnp.float32))
             # )
             current_prompt_mask = jnp.logical_and(obs.tokenized_prompt_mask, keep_mask)

@@ -122,6 +122,9 @@ force-sort-within-sections = true
 single-line-exclusions = ["collections.abc", "typing", "typing_extensions"]
 known-third-party = ["wandb"]
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/tmrl_openpi"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

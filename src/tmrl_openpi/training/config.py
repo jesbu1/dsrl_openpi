@@ -246,6 +246,7 @@ class SimpleDataConfig(DataConfigFactory):
             use_quantile_norm=model_config.model_type != ModelType.PI0 and model_config.model_type != ModelType.TMPi0,
         )
 
+
 @dataclasses.dataclass(frozen=True)
 class RLDSDroidDataConfig(DataConfigFactory):
     """
@@ -304,7 +305,6 @@ class RLDSDroidDataConfig(DataConfigFactory):
             action_space=self.action_space,
             filter_dict_path=self.filter_dict_path,
         )
-
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1076,7 +1076,6 @@ _CONFIGS = [
         save_interval=250,
         keep_period=10000,
     ),
-
     # LoRA Fine-tuned WidowX from Bridge FT'd on pi0
     TrainConfig(
         name="tmpi0_lora_widowx_from_bridge",
@@ -1125,8 +1124,6 @@ _CONFIGS = [
         save_interval=250,
         keep_period=10000,
     ),
-
-
     # TrainConfig(
     #     name="tmpi05_lora_bridge_1_cam",
     #     model=tmpi0.TMPi0Config(pi05=True, paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),

@@ -52,9 +52,10 @@ class Pi0Config(_model.BaseModelConfig):
     #     from tmrl_openpi.models.pi0 import Pi0
 
     #     return Pi0(self, rngs=nnx.Rngs(rng))
-    
+
     def create(self, rngs: nnx.Rngs) -> "Pi0":
         from tmrl_openpi.models.pi0 import Pi0
+
         return Pi0(self, rngs=rngs)
 
     @override

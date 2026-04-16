@@ -125,7 +125,7 @@ class PI0Pytorch(nn.Module):
             raise ValueError(msg) from None
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-  
+
     def gradient_checkpointing_enable(self):
         """Enable gradient checkpointing for memory optimization."""
         self.gradient_checkpointing_enabled = True

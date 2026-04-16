@@ -266,7 +266,7 @@ class TokenizePrompt(DataTransformFn):
             state = None
 
         if not isinstance(prompt, str):
-            if hasattr(prompt, '__len__') and len(prompt) >= 1:
+            if hasattr(prompt, "__len__") and len(prompt) >= 1:
                 prompt = str(prompt[0])
             else:
                 prompt = str(getattr(prompt, "item", lambda: prompt)())

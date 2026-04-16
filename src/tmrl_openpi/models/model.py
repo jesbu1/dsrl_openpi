@@ -253,7 +253,8 @@ class BaseModelConfig(abc.ABC):
     def load_pytorch(self, train_config, weight_path: str):
         logger.info(f"train_config: {train_config}")
         from tmrl_openpi.models.tmpi0 import TMPi0Config
-        if 'postbc' in train_config.name:
+
+        if "postbc" in train_config.name:
             logger.info("Loading POSTBCPytorch")
             model = postbc_pytorch.PostBCPytorch(config=train_config.model)
         elif isinstance(train_config.model, TMPi0Config):
@@ -262,7 +263,7 @@ class BaseModelConfig(abc.ABC):
         else:
             logger.info("Loading PI0Pytorch")
             model = pi0_pytorch.PI0Pytorch(config=train_config.model)
-        safetensors.torch.load_model(model, weight_path)
+        safetensors.torch.load_model(model, weight_path, strict=False)
         return model
 
     @abc.abstractmethod
